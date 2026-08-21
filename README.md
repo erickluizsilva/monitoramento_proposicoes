@@ -65,13 +65,13 @@ A infraestrutura é local (sem dependência de nuvem): o volume de dados é pequ
 
 ## Status do projeto
 
-- [x] Extração e carga da camada **bronze** (proposições, autores, temas e tramitações)
-- [ ] Modelagem da camada **silver** (normalização relacional)
+- [x] Extração e carga da camada **bronze** (proposições, autores, temas e tramitações) — ~1.530 proposições únicas
+- [x] Modelagem da camada **silver** (normalização relacional + tabelas de referência)
 - [ ] Views analíticas da camada **gold** com matching de palavras-chave
 - [ ] Dashboard Power BI
 - [ ] Carga incremental diária automatizada
 
-**Próximas fases:** enriquecimento com pautas de comissões e votações, alertas automáticos, e dados do Senado Federal.
+**Próximas fases:** enriquecimento de autores com partido/UF (via endpoint `/deputados`), pautas de comissões e votações, alertas automáticos, e dados do Senado Federal.
 
 ## Rodando localmente
 
@@ -89,6 +89,8 @@ cp src/.env.example src/.env
 cd src
 python setup_db.py             # cria os schemas e tabelas
 python extract_bronze.py       # roda a carga histórica (bronze)
+python load_dimensoes.py       # popula tabelas de referência (temas e keywords)
+python load_silver.py          # transforma bronze em tabelas relacionais (silver)
 ```
 
 ## Autor

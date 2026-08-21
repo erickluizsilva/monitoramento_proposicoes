@@ -14,5 +14,6 @@ if __name__ == "__main__":
     with get_connection() as conn:
         with conn.cursor() as cur:
             apply_sql_file(cur, "schema_bronze.sql")
+            apply_sql_file(cur, "schema_silver.sql")
         conn.commit()
-    print("Schema bronze aplicado com sucesso.")
+    print("Schemas bronze e silver aplicados com sucesso.")
