@@ -71,10 +71,13 @@ A infraestrutura é local (sem dependência de nuvem): o volume de dados é pequ
 - [x] Modelagem da camada **silver** (normalização relacional + tabelas de referência)
 - [x] Views analíticas da camada **gold** com matching de palavras-chave — ~280 proposições relevantes identificadas
 - [x] Enriquecimento do autor principal com partido/UF **atuais** (dimensão de deputados)
-- [ ] Dashboard Power BI
-- [ ] Carga incremental diária automatizada
+- [x] Carga incremental (bronze → silver → dim_deputado em um único script)
+- [ ] Dashboard Power BI (em desenvolvimento)
+- [ ] Agendamento automático da carga incremental (Task Scheduler / cron)
 
 O partido/UF exibidos são os atuais do deputado (dimensão separada, atualizável), não os da data em que a proposição foi apresentada — decisão deliberada, já que o uso real é o time político saber com quem falar hoje.
+
+A carga incremental (`extract_incremental.py`) busca proposições com tramitação nos últimos 3 dias (pega tanto proposições novas quanto movimentação em proposições antigas) e registra cada execução em `bronze.controle_execucao`. A janela do próximo run nunca começa depois de "3 dias antes da última execução bem-sucedida" — se a máquina ficar dias sem rodar o job, a janela seguinte se alarga sozinha para cobrir o período perdido, sem depender de alguém notar a falha.
 
 **Próximas fases:** pautas de comissões e votações, alertas automáticos, e dados do Senado Federal.
 
@@ -97,6 +100,9 @@ python extract_bronze.py       # roda a carga histórica (bronze)
 python load_dimensoes.py       # popula tabelas de referência (temas e keywords)
 python load_silver.py          # transforma bronze em tabelas relacionais (silver)
 python load_dim_deputado.py    # enriquece autores deputados com partido/UF atuais
+
+# no dia a dia, roda só isso (bronze incremental + silver + dim_deputado, tudo em um):
+python extract_incremental.py
 ```
 
 ## Autor

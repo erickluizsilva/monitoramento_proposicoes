@@ -30,13 +30,22 @@ def _get(url, params=None):
     raise RuntimeError(f"Falha ao chamar {url} após {MAX_RETRIES} tentativas: {last_error}")
 
 
-def listar_proposicoes_por_tema(cod_tema, itens=100):
+def listar_proposicoes_por_tema(cod_tema, itens=100, data_inicio=None, data_fim=None):
     """Retorna todas as proposições de um tema, seguindo a paginação via links.
+
+    Se data_inicio/data_fim forem informadas, filtra por proposições com
+    tramitação no período (não a data de apresentação) — usado na carga
+    incremental para pegar tanto proposições novas quanto movimentações em
+    proposições antigas.
 
     Faz uma pausa entre páginas para não sobrecarregar a API.
     """
     url = f"{API_BASE_URL}/proposicoes"
     params = {"codTema": cod_tema, "itens": itens, "ordenarPor": "id", "ordem": "ASC"}
+    if data_inicio is not None:
+        params["dataInicio"] = data_inicio.isoformat()
+    if data_fim is not None:
+        params["dataFim"] = data_fim.isoformat()
 
     proposicoes = []
     while url:
