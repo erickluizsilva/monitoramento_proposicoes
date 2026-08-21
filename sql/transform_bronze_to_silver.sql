@@ -13,7 +13,7 @@ WITH ultimo_bronze AS (
 INSERT INTO silver.proposicao (
     id_proposicao, sigla_tipo, descricao_tipo, numero, ano, ementa,
     data_apresentacao, sigla_orgao_atual, descricao_situacao, descricao_tramitacao,
-    despacho, data_ultima_movimentacao, cod_situacao, link_direto, data_extracao
+    despacho, data_ultima_movimentacao, cod_situacao, link_direto, keywords_camara, data_extracao
 )
 SELECT
     b.id_proposicao,
@@ -30,6 +30,7 @@ SELECT
     (b.payload#>>'{statusProposicao,dataHora}')::timestamp,
     (b.payload#>>'{statusProposicao,codSituacao}')::int,
     'https://www.camara.leg.br/proposicoesWeb/fichadetramitacao?idProposicao=' || b.id_proposicao,
+    b.payload->>'keywords',
     b.data_extracao
 FROM ultimo_bronze b
 ON CONFLICT (id_proposicao) DO UPDATE SET
@@ -43,6 +44,7 @@ ON CONFLICT (id_proposicao) DO UPDATE SET
     descricao_situacao = EXCLUDED.descricao_situacao,
     descricao_tramitacao = EXCLUDED.descricao_tramitacao,
     despacho = EXCLUDED.despacho,
+    keywords_camara = EXCLUDED.keywords_camara,
     data_ultima_movimentacao = EXCLUDED.data_ultima_movimentacao,
     cod_situacao = EXCLUDED.cod_situacao,
     link_direto = EXCLUDED.link_direto,

@@ -28,7 +28,9 @@ Não há histórico consolidado, alertas ou visão comparativa — só o portal,
 
 ## Como funciona
 
-A extração usa duas camadas de filtro: um filtro amplo por tema legislativo (reduz o universo de ~27.000 proposições para as classificadas em Agricultura/Pecuária e Meio Ambiente), e um filtro fino por palavra-chave aplicado sobre a ementa, mantido como configuração — novos termos podem ser adicionados sem reprocessar a extração.
+A extração usa duas camadas de filtro: um filtro amplo por tema legislativo (reduz o universo de ~27.000 proposições para as classificadas em Agricultura/Pecuária e Meio Ambiente), e um filtro fino por palavra-chave mantido como configuração — novos termos podem ser adicionados sem reprocessar a extração.
+
+O filtro fino roda contra a ementa **e** contra o campo de indexação temática que a própria Câmara mantém por proposição — a ementa sozinha se mostrou insuficiente (ex.: uma proposição sobre bem-estar de suínos pode ter ementa genérica como "Institui o Código Federal de Bem-Estar Animal", sem citar o termo, mas a Câmara já indexa isso). O matching usa regex ancorada por início de palavra em vez de busca por substring simples, para cobrir variações de gênero/número (suíno/suína/suínos) sem gerar falso positivo por coincidência textual (ex.: um radical mal ancorado para "aves" bateria em "grave"; para "ração" bateria em "tração").
 
 Os dados passam por três camadas, seguindo o padrão medallion:
 
@@ -67,7 +69,7 @@ A infraestrutura é local (sem dependência de nuvem): o volume de dados é pequ
 
 - [x] Extração e carga da camada **bronze** (proposições, autores, temas e tramitações) — ~1.530 proposições únicas
 - [x] Modelagem da camada **silver** (normalização relacional + tabelas de referência)
-- [ ] Views analíticas da camada **gold** com matching de palavras-chave
+- [x] Views analíticas da camada **gold** com matching de palavras-chave — ~280 proposições relevantes identificadas
 - [ ] Dashboard Power BI
 - [ ] Carga incremental diária automatizada
 

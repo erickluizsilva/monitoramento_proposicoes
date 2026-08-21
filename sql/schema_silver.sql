@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS silver.proposicao (
     data_ultima_movimentacao TIMESTAMP,
     cod_situacao            INT,
     link_direto             TEXT,
+    keywords_camara         TEXT,
     data_extracao           TIMESTAMP
 );
 
@@ -69,8 +70,11 @@ CREATE TABLE IF NOT EXISTS silver.dim_tema (
 );
 
 -- Tabela de configuração: palavras-chave usadas no matching da gold.
+-- 'termo' é o fragmento de regex usado no match (ver src/keywords.py);
+-- 'rotulo' é o texto legível exibido nos resultados (ex.: "suínos").
 CREATE TABLE IF NOT EXISTS silver.dim_keyword (
     id_keyword SERIAL PRIMARY KEY,
     termo      VARCHAR(100) UNIQUE NOT NULL,
+    rotulo     VARCHAR(100) NOT NULL,
     ativo      BOOLEAN NOT NULL DEFAULT true
 );
