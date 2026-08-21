@@ -71,3 +71,8 @@ def buscar_temas(id_proposicao):
 def buscar_tramitacoes(id_proposicao):
     data = _get(f"{API_BASE_URL}/proposicoes/{id_proposicao}/tramitacoes")
     return data.get("dados")
+
+
+def buscar_deputado(id_deputado):
+    data = _get(f"{API_BASE_URL}/deputados/{id_deputado}")
+    return data.get("dados")

@@ -70,10 +70,13 @@ A infraestrutura é local (sem dependência de nuvem): o volume de dados é pequ
 - [x] Extração e carga da camada **bronze** (proposições, autores, temas e tramitações) — ~1.530 proposições únicas
 - [x] Modelagem da camada **silver** (normalização relacional + tabelas de referência)
 - [x] Views analíticas da camada **gold** com matching de palavras-chave — ~280 proposições relevantes identificadas
+- [x] Enriquecimento do autor principal com partido/UF **atuais** (dimensão de deputados)
 - [ ] Dashboard Power BI
 - [ ] Carga incremental diária automatizada
 
-**Próximas fases:** enriquecimento de autores com partido/UF (via endpoint `/deputados`), pautas de comissões e votações, alertas automáticos, e dados do Senado Federal.
+O partido/UF exibidos são os atuais do deputado (dimensão separada, atualizável), não os da data em que a proposição foi apresentada — decisão deliberada, já que o uso real é o time político saber com quem falar hoje.
+
+**Próximas fases:** pautas de comissões e votações, alertas automáticos, e dados do Senado Federal.
 
 ## Rodando localmente
 
@@ -93,6 +96,7 @@ python setup_db.py             # cria os schemas e tabelas
 python extract_bronze.py       # roda a carga histórica (bronze)
 python load_dimensoes.py       # popula tabelas de referência (temas e keywords)
 python load_silver.py          # transforma bronze em tabelas relacionais (silver)
+python load_dim_deputado.py    # enriquece autores deputados com partido/UF atuais
 ```
 
 ## Autor

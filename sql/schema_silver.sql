@@ -69,6 +69,20 @@ CREATE TABLE IF NOT EXISTS silver.dim_tema (
     nome     VARCHAR(255)
 );
 
+-- Dimensão de deputados: partido/UF ATUAIS (ultimoStatus da API /deputados/{id}),
+-- não o partido na data em que a proposição foi apresentada. Para deputados fora
+-- de mandato, "atual" é o último status que a Câmara registrou, não necessariamente
+-- a filiação partidária civil dele hoje. Upsert — sempre reflete o dado mais recente
+-- coletado, sem histórico de mudanças de partido (para isso, ver /deputados/{id}/historico).
+CREATE TABLE IF NOT EXISTS silver.dim_deputado (
+    id_deputado   INT PRIMARY KEY,
+    nome          VARCHAR(255),
+    sigla_partido VARCHAR(20),
+    sigla_uf      VARCHAR(5),
+    situacao      VARCHAR(50),
+    data_extracao TIMESTAMP
+);
+
 -- Tabela de configuração: palavras-chave usadas no matching da gold.
 -- 'termo' é o fragmento de regex usado no match (ver src/keywords.py);
 -- 'rotulo' é o texto legível exibido nos resultados (ex.: "suínos").

@@ -17,6 +17,8 @@ JOIN silver.dim_keyword k
 GROUP BY p.id_proposicao;
 
 -- View principal: uma linha por proposição relevante (com pelo menos 1 keyword).
+-- partido/UF do autor principal são os ATUAIS (via silver.dim_deputado), não os da
+-- data de apresentação da proposição — só se aplica quando o autor é deputado.
 CREATE OR REPLACE VIEW gold.vw_monitoramento AS
 SELECT
     p.id_proposicao,
@@ -24,6 +26,8 @@ SELECT
     p.ementa,
     autor.nome AS autor_principal,
     autor.tipo AS tipo_autor_principal,
+    dep.sigla_partido AS partido_autor_principal,
+    dep.sigla_uf AS uf_autor_principal,
     p.descricao_situacao AS situacao_atual,
     p.sigla_orgao_atual AS orgao_atual,
     COALESCE(p.descricao_tramitacao, p.despacho) AS ultima_movimentacao,
@@ -35,6 +39,9 @@ FROM silver.proposicao p
 JOIN gold.vw_proposicao_keywords kw ON kw.id_proposicao = p.id_proposicao
 LEFT JOIN silver.proposicoes_proponentes autor
     ON autor.id_proposicao = p.id_proposicao AND autor.ordem_assinatura = 1
+LEFT JOIN silver.dim_deputado dep
+    ON autor.tipo = 'Deputado(a)'
+    AND dep.id_deputado = (regexp_replace(autor.uri, '.*/', ''))::int
 ORDER BY p.data_ultima_movimentacao DESC;
 
 -- Histórico completo de tramitações, para drill-down a partir da view principal.
