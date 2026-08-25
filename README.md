@@ -87,7 +87,7 @@ A mesma execução também atualiza as pautas de comissões (CAPADR, CCJC, CMADS
 ## Rodando localmente
 
 ```bash
-git clone [<url-do-repositorio>](https://github.com/erickluizsilva/monitoramento_proposicoes)
+git clone [url-do-repositorio](https://github.com/erickluizsilva/monitoramento_proposicoes)
 cd monitoramento_proposicoes
 
 python -m venv venv
