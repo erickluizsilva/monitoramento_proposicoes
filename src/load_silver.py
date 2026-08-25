@@ -9,6 +9,8 @@ CONTAGENS = [
     ("silver.proposicoes_proponentes", "SELECT count(*) FROM silver.proposicoes_proponentes;"),
     ("silver.proposicao_tema", "SELECT count(*) FROM silver.proposicao_tema;"),
     ("silver.tramitacao", "SELECT count(*) FROM silver.tramitacao;"),
+    ("silver.evento", "SELECT count(*) FROM silver.evento;"),
+    ("silver.evento_pauta", "SELECT count(*) FROM silver.evento_pauta;"),
 ]
 
 

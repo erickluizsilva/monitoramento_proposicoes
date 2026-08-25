@@ -85,3 +85,62 @@ def buscar_tramitacoes(id_proposicao):
 def buscar_deputado(id_deputado):
     data = _get(f"{API_BASE_URL}/deputados/{id_deputado}")
     return data.get("dados")
+
+
+def listar_eventos(ids_orgao, cods_tipo_evento, data_inicio, data_fim, itens=100):
+    """Lista eventos de um ou mais órgãos/tipos num período, seguindo a paginação.
+
+    idOrgao e codTipoEvento aceitam múltiplos valores separados por vírgula na
+    própria API — uma chamada cobre todas as comissões e tipos deliberativos
+    de uma vez, em vez de uma combinação por chamada.
+    """
+    url = f"{API_BASE_URL}/eventos"
+    params = {
+        "idOrgao": ",".join(str(i) for i in ids_orgao),
+        "codTipoEvento": ",".join(str(i) for i in cods_tipo_evento),
+        "dataInicio": data_inicio.isoformat(),
+        "dataFim": data_fim.isoformat(),
+        "itens": itens,
+        "ordenarPor": "id",
+        "ordem": "asc",
+    }
+
+    eventos = []
+    while url:
+        data = _get(url, params=params)
+        eventos.extend(data.get("dados", []))
+
+        links = data.get("links", [])
+        url = next((link["href"] for link in links if link["rel"] == "next"), None)
+        params = None
+
+        if url:
+            time.sleep(SLEEP_BETWEEN_CALLS)
+
+    return eventos
+
+
+def buscar_pauta_evento(id_evento):
+    data = _get(f"{API_BASE_URL}/eventos/{id_evento}/pauta")
+    return data.get("dados")
+
+
+def listar_orgaos(ids_orgao, itens=100):
+    """Busca um ou mais órgãos pelo id (múltiplos valores separados por vírgula
+    numa única chamada), seguindo a paginação via links."""
+    url = f"{API_BASE_URL}/orgaos"
+    params = {"id": ",".join(str(i) for i in ids_orgao), "itens": itens}
+
+    orgaos = []
+    while url:
+        data = _get(url, params=params)
+        orgaos.extend(data.get("dados", []))
+
+        links = data.get("links", [])
+        url = next((link["href"] for link in links if link["rel"] == "next"), None)
+        params = None
+
+        if url:
+            time.sleep(SLEEP_BETWEEN_CALLS)
+
+    return orgaos

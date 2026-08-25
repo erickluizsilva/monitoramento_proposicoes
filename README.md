@@ -72,6 +72,7 @@ A infraestrutura é local (sem dependência de nuvem): o volume de dados é pequ
 - [x] Views analíticas da camada **gold** com matching de palavras-chave — ~280 proposições relevantes identificadas
 - [x] Enriquecimento do autor principal com partido/UF **atuais** (dimensão de deputados)
 - [x] Carga incremental (bronze → silver → dim_deputado em um único script)
+- [x] Pautas de comissões e plenário (`gold.vw_pautas_monitoradas`) — alerta de proposições monitoradas agendadas para votação
 - [ ] Dashboard Power BI (em desenvolvimento)
 - [ ] Agendamento automático da carga incremental (Task Scheduler / cron)
 
@@ -79,12 +80,14 @@ O partido/UF exibidos são os atuais do deputado (dimensão separada, atualizáv
 
 A carga incremental (`extract_incremental.py`) busca proposições com tramitação nos últimos 3 dias (pega tanto proposições novas quanto movimentação em proposições antigas) e registra cada execução em `bronze.controle_execucao`. A janela do próximo run nunca começa depois de "3 dias antes da última execução bem-sucedida" — se a máquina ficar dias sem rodar o job, a janela seguinte se alarga sozinha para cobrir o período perdido, sem depender de alguém notar a falha.
 
-**Próximas fases:** pautas de comissões e votações, alertas automáticos, e dados do Senado Federal.
+A mesma execução também atualiza as pautas de comissões (CAPADR, CCJC, CMADS e PLEN — as únicas confirmadas com eventos deliberativos ativos; não existe hoje uma comissão específica de bem-estar animal em atividade) numa janela rolante de D-7 a D+14. O cruzamento com as proposições monitoradas geralmente ocorre de forma indireta: um item de pauta (ex. um requerimento) referencia o PL de fato como "proposição relacionada", caminho bem mais comum que o item citar o PL diretamente.
+
+**Próximas fases:** alertas automáticos e dados do Senado Federal.
 
 ## Rodando localmente
 
 ```bash
-git clone <url-do-repositorio>
+git clone [<url-do-repositorio>](https://github.com/erickluizsilva/monitoramento_proposicoes)
 cd monitoramento_proposicoes
 
 python -m venv venv
@@ -100,9 +103,13 @@ python extract_bronze.py       # roda a carga histórica (bronze)
 python load_dimensoes.py       # popula tabelas de referência (temas e keywords)
 python load_silver.py          # transforma bronze em tabelas relacionais (silver)
 python load_dim_deputado.py    # enriquece autores deputados com partido/UF atuais
+python load_dim_orgao.py       # nomes dos órgãos (comissões, plenário) por trás das siglas
 
-# no dia a dia, roda só isso (bronze incremental + silver + dim_deputado, tudo em um):
-python extract_incremental.py
+# carga histórica de eventos/pautas (uma vez; ajuste as datas em load_eventos.py):
+python -c "from datetime import date; from load_eventos import executar_carga_eventos; executar_carga_eventos(date(2023,1,1), date.today())"
+
+# no dia a dia, roda só isso (bronze incremental + eventos + silver + dimensões, tudo em um):
+python pipeline.py
 ```
 
 ## Autor

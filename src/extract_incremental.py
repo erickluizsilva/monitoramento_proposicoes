@@ -6,10 +6,14 @@ import api_client as api
 from db import get_connection
 from load_bronze import carregar_proposicao_bronze
 from load_dim_deputado import carregar_dim_deputado
+from load_dim_orgao import carregar_dim_orgao
+from load_eventos import executar_carga_eventos
 from load_silver import executar_transformacao_silver
 
 TEMAS = [64, 48]
 JANELA_SEGURANCA_DIAS = 3
+EVENTOS_DIAS_PASSADO = 7
+EVENTOS_DIAS_FUTURO = 14
 
 
 def calcular_janela(conn):
@@ -52,14 +56,14 @@ def coletar_ids_unicos(data_inicio, data_fim):
     return ids_ordenados
 
 
-def registrar_execucao(conn, data_inicio, data_fim, qtd):
+def registrar_execucao(conn, tipo_carga, data_inicio, data_fim, qtd):
     with conn.cursor() as cur:
         cur.execute(
             """
             INSERT INTO bronze.controle_execucao (tipo_carga, data_inicio_janela, data_fim_janela, qtd_proposicoes)
-            VALUES ('incremental', %s, %s, %s);
+            VALUES (%s, %s, %s, %s);
             """,
-            (data_inicio, data_fim, qtd),
+            (tipo_carga, data_inicio, data_fim, qtd),
         )
     conn.commit()
 
@@ -83,15 +87,26 @@ def executar_carga_incremental():
                     erro_count += 1
                     tqdm.write(f"  ! proposição {id_prop} / {tabela}: {status}")
 
-        registrar_execucao(conn, data_inicio, data_fim, len(ids))
+        registrar_execucao(conn, "incremental", data_inicio, data_fim, len(ids))
 
     print(f"\nCarga incremental (bronze) concluída. Endpoints ok: {ok_count} | com erro: {erro_count}")
+
+    print("\nCarregando eventos/pautas...")
+    hoje = date.today()
+    data_inicio_eventos = hoje - timedelta(days=EVENTOS_DIAS_PASSADO)
+    data_fim_eventos = hoje + timedelta(days=EVENTOS_DIAS_FUTURO)
+    qtd_eventos = executar_carga_eventos(data_inicio_eventos, data_fim_eventos)
+    with get_connection() as conn:
+        registrar_execucao(conn, "eventos", data_inicio_eventos, data_fim_eventos, qtd_eventos)
 
     print("\nAtualizando silver...")
     executar_transformacao_silver()
 
     print("\nAtualizando dim_deputado...")
     carregar_dim_deputado()
+
+    print("\nAtualizando dim_orgao...")
+    carregar_dim_orgao()
 
 
 if __name__ == "__main__":

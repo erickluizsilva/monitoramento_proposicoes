@@ -34,7 +34,8 @@ SELECT
     p.data_ultima_movimentacao,
     (CURRENT_DATE - p.data_ultima_movimentacao::date) AS dias_sem_movimentacao,
     kw.keywords_encontradas,
-    p.link_direto
+    p.link_direto,
+    orgao.nome AS nome_orgao_atual
 FROM silver.proposicao p
 JOIN gold.vw_proposicao_keywords kw ON kw.id_proposicao = p.id_proposicao
 LEFT JOIN silver.proposicoes_proponentes autor
@@ -42,6 +43,7 @@ LEFT JOIN silver.proposicoes_proponentes autor
 LEFT JOIN silver.dim_deputado dep
     ON autor.tipo = 'Deputado(a)'
     AND dep.id_deputado = (regexp_replace(autor.uri, '.*/', ''))::int
+LEFT JOIN silver.dim_orgao orgao ON orgao.id_orgao = p.id_orgao_atual
 ORDER BY p.data_ultima_movimentacao DESC;
 
 -- Histórico completo de tramitações, para drill-down a partir da view principal.
@@ -54,10 +56,45 @@ SELECT
     t.sigla_orgao,
     t.descricao_situacao,
     t.descricao_tramitacao,
-    t.despacho
+    t.despacho,
+    orgao.nome AS nome_orgao
 FROM silver.tramitacao t
 JOIN silver.proposicao p ON p.id_proposicao = t.id_proposicao
+LEFT JOIN silver.dim_orgao orgao ON orgao.id_orgao = t.id_orgao
 ORDER BY t.id_proposicao, t.sequencia;
+
+-- Pautas de comissões/plenário que citam proposições monitoradas — direto (ep.id_proposicao)
+-- ou indireto, quando um item processual (ex. requerimento) referencia o PL de fato
+-- (ep.id_proposicao_relacionada). Este último é o caminho mais comum (ver achados_eventos.txt).
+-- Partido/UF do relator são os ATUAIS via dim_deputado, mesmo princípio do autor principal.
+CREATE OR REPLACE VIEW gold.vw_pautas_monitoradas AS
+SELECT
+    e.id_evento,
+    e.data_hora_inicio,
+    e.sigla_orgao,
+    e.descricao_tipo,
+    e.situacao AS situacao_evento,
+    ep.topico,
+    ep.titulo,
+    m.identificacao,
+    m.ementa,
+    ep.nome_relator,
+    dep.sigla_partido AS partido_relator,
+    dep.sigla_uf AS uf_relator,
+    ep.uri_votacao,
+    ep.situacao_item,
+    CASE
+        WHEN e.data_hora_inicio > now() THEN 'Agendado'
+        WHEN ep.uri_votacao IS NOT NULL THEN 'Votado'
+        ELSE 'Encerrado sem votação'
+    END AS status_alerta,
+    e.nome_orgao
+FROM silver.evento_pauta ep
+JOIN silver.evento e ON e.id_evento = ep.id_evento
+JOIN gold.vw_monitoramento m
+    ON m.id_proposicao = ep.id_proposicao OR m.id_proposicao = ep.id_proposicao_relacionada
+LEFT JOIN silver.dim_deputado dep ON dep.id_deputado = ep.id_deputado_relator
+ORDER BY e.data_hora_inicio DESC;
 
 -- Auditoria: proposições do tema 64 (Agricultura, Pecuária, Pesca e Extrativismo)
 -- que não bateram em nenhuma keyword ativa — usada para descobrir termos faltantes.

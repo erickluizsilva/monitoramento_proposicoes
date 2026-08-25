@@ -9,6 +9,10 @@ _SQL_IDS_DEPUTADOS = """
     SELECT DISTINCT (regexp_replace(uri, '.*/', ''))::int AS id_deputado
     FROM silver.proposicoes_proponentes
     WHERE tipo = 'Deputado(a)'
+    UNION
+    SELECT DISTINCT id_deputado_relator
+    FROM silver.evento_pauta
+    WHERE id_deputado_relator IS NOT NULL
     ORDER BY 1;
 """
 
